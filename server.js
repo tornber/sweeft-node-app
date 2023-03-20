@@ -3,6 +3,7 @@ const app = express()
 const bcrypt = require('bcrypt')
 const mongoose = require('mongoose')
 const User = require('./models/user')
+const Category = require('./models/category')
 const jwb = require('jsonwebtoken')
 require('dotenv').config()
 
@@ -65,7 +66,7 @@ app.put('/change-password',async (req,res) => {
     try {
         const user = jwb.verify(token,JWBSECRET)
         if(user.hasOwnProperty('id')) {
-            return res.status(401).json({status: 'error',message: 'invalid session'})
+            return res.status(403).json({status: 'error',message: 'invalid session'})
         }
         const id = user.id 
         const hashedPassword = await bcrypt.hash(password,10)
@@ -75,6 +76,59 @@ app.put('/change-password',async (req,res) => {
         return res.status(204).send()
     } catch(error) {
         return res.status(500).json({status: 'error',message: 'internal server error, can not update password'})
+    }
+})
+
+app.post('/new-category',async (req,res) => {
+    if (req.headers['content-type'] !== 'application/json') {
+        return res.status(415).json({status: 'error',message: 'unsupported media type'})
+    }
+    const {name,token} = req.body
+    const user = jwb.verify(token,JWBSECRET)
+    if (!name) {
+        return res.status(422).json({status: 'error',message: 'category name required'})
+    }
+    try {
+        await Category.create({name,userId: user.id})
+        return res.status(200).json({status: 'ok',message: 'category created'})
+
+    } catch(error) {
+        return res.status(500).json({status: 'error',message: 'internal server error'})
+    }
+}) 
+
+app.put('/update-category',async (req,res) => {
+    const {name,token,newName} = req.body
+    const user = jwb.verify(token,JWBSECRET)
+    if (!name) {
+        return res.status(422).json({status: 'error',message: 'category name required'})
+    }
+    try {
+        const {_id} = await Category.findOne({name,userId: user.id})
+        await Category.findByIdAndUpdate(_id,{
+            $set: {name: newName}}
+        )
+        return res.status(200).json({status: 'ok',message: 'category name updated'})
+    } catch(error) {
+        return res.status(500).json({status: 'error',message: 'internal server error'})
+    }
+})
+
+app.delete('/delete-category',async (req,res) => {
+    const {name,token} = req.body
+    const user = jwb.verify(token,JWBSECRET)
+    if (!name) {
+        return res.status(422).json({status: 'error',message: 'category name required'})
+    }
+    try {
+        const {income,outcome,userId} = await Category.findOne({name,userId: user.id})
+        await Category.createOrUpdate({name: "default"},{
+            name: 'default',income,outcome,userId
+        })
+        await Category.findByIdAndDelete(category._id)
+        return res.status(200).json({status: 'ok',message: 'category name updated'})
+    } catch(error) {
+        return res.status(500).json({status: 'error',message: 'internal server error'})
     }
 })
 
