@@ -6,7 +6,7 @@ const User = require('./models/user')
 const Category = require('./models/category')
 const jwb = require('jsonwebtoken')
 require('dotenv').config()
-
+//ff
 const JWBSECRET = process.env.SECRET
 
 mongoose.connect('mongodb://localhost:27017/sweeftApp',{
