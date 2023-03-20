@@ -132,6 +132,31 @@ app.delete('/delete-category',async (req,res) => {
     }
 })
 
+app.put('/update-category-transactions',async (req,res) => {
+    const data = req.body
+    const user = jwb.verify(token,JWBSECRET)
+    if (data.length === 0) {
+        return res.status(422).json({status: 'error',message: 'update data not found'})
+    }
+    try {
+        data.forEach(async (item) => {
+            const {name,incomes,outcome} = item
+            if (!name) {
+                await Category.updateOne({name: "default",userId: user.id},{
+                    $set: {incomes: {$push: {incomes: {$each: incomes}}},outcome}
+                })
+            } else {
+                await Category.findOneAndUpdate({name,userId: user.id},{
+                    $set: {incomes: {$push: {incomes: {$each: incomes}}},outcome}
+                })
+            }
+        })
+        return res.status(200).json({status: 'ok',message: 'category transactions updated'})
+    } catch(error) {
+        return res.status(500).json({status: 'error',message: 'internal server error'})
+    }
+})
+
 app.get('/register',(req,res) => {
     res.send('register page')
 }) 

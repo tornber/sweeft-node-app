@@ -2,7 +2,7 @@ const mongoose = require('mongoose')
 
 const CategorySchema = new mongoose.Schema({
     name: {type: String,required: true},
-    income: Number,
+    incomes: Array,
     outcome: Number,
     userId: {
         type: mongoose.Schema.Types.ObjectId,
